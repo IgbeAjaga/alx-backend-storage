@@ -10,6 +10,7 @@ redis_instance = redis.Redis()
 """The module-level Redis instance.
 """
 
+
 def cache_tracker(method: Callable) -> Callable:
     """A decorator to cache fetched web data with tracking.
     """
@@ -26,6 +27,7 @@ def cache_tracker(method: Callable) -> Callable:
         redis_instance.setex(f'result:{url}', 10, response.text)
         return response.text
     return wrapper
+
 
 @cache_tracker
 def get_page(url: str) -> str:
