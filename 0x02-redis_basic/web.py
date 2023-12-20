@@ -22,10 +22,10 @@ def data_cacher(method: Callable) -> Callable:
         result = redis_instance.get(f'result:{url}')
         if result:
             return result.decode('utf-8')
-        result = method(url)
+        response = method(url)
         redis_instance.set(f'count:{url}', 0)
-        redis_instance.setex(f'result:{url}', 10, result)
-        return result
+        redis_instance.setext(f'result:{url}', 10, response.text)
+        return response.text
     return invoker
 
 
