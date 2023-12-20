@@ -20,5 +20,5 @@ def get_page(url: str) -> str:
         return cached_response.decode('utf-8')
 
     response = requests.get(url)
-    redis_instance.setex(f'result:{url}', 10, response.text)
+    redis_instance.setext(f'result:{url}', 10, response.text)
     return response.text
