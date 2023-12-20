@@ -1,36 +1,36 @@
 #!/usr/bin/env python3
-'''A module with tools for request caching and tracking.'''
-import requests
+'''A module with tools for request caching and tracking.
+'''
 import redis
+import requests
 from functools import wraps
 from typing import Callable
 
+redis_store = redis.Redis()
+'''The module-level Redis instance.
+'''
 
-def count_calls(method: Callable) -> Callable:
-    '''Decorator to track the number of times a method is called.'''
+def data_cacher(method: Callable) -> Callable:
+    '''Decorator to cache fetched data.
+    '''
     @wraps(method)
-    def invoker(self, *args, **kwargs):
-        '''Increments the method call count.'''
-        self._redis.incr(method.__qualname__)
-        return method(self, *args, **kwargs)
+    def invoker(url: str) -> str:
+        '''Wrapper function to cache the output.
+        '''
+        redis_store.incr(f'count:{url}')
+        result = redis_store.get(f'result:{url}')
+        if result:
+            return result.decode('utf-8')
+        result = method(url)
+        redis_store.set(f'count:{url}', 0)
+        redis_store.setex(f'result:{url}', 10, result)
+        return result
+
     return invoker
 
 
-class Cache:
-    '''Represents an object for caching and tracking URL accesses.'''
-    def __init__(self) -> None:
-        '''Initializes a Cache instance.'''
-        self._redis = redis.Redis()
-        self._redis.flushdb(True)
-
-    @count_calls
-    def get_page(self, url: str) -> str:
-        '''Fetches and caches HTML content from a given URL.'''
-        cached_html = self._redis.get(url)
-        if cached_html:
-            return cached_html.decode('utf-8')
-
-        response = requests.get(url)
-        html_content = response.text
-        self._redis.setex(url, 10, html_content)
-        return html_content
+@data_cacher
+def get_page(url: str) -> str:
+    '''Fetches and returns the content of a URL, caching the response and tracking the request.
+    '''
+    return requests.get(url).text
