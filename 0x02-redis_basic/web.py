@@ -10,12 +10,11 @@ redis_instance = redis.Redis()
 """The module-level Redis instance.
 """
 
-
 def data_cacher(method: Callable) -> Callable:
     """Caches the output of fetched data.
     """
     @wraps(method)
-    def invoker(url) -> str:
+    def invoker(url: str) -> str:
         """Wrapper function for caching the output.
         """
         redis_instance.incr(f'count:{url}')
@@ -23,15 +22,13 @@ def data_cacher(method: Callable) -> Callable:
         if result:
             return result.decode('utf-8')
         response = method(url)
-        redis_instance.set(f'count:{url}', 0)
-        redis_instance.setext(f'result:{url}', 10, response.text)
+        redis_instance.set(f'result:{url}', response.text, ex=10)
         return response.text
     return invoker
-
 
 @data_cacher
 def get_page(url: str) -> str:
     """Returns the content of a URL after caching the request's response
     and tracking the request.
     """
-    return requests.get(url).text
+    return requests.get(url)
