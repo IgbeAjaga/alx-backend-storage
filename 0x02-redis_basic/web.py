@@ -23,7 +23,6 @@ def cache_tracker(method: Callable) -> Callable:
         if result:
             return result.decode('utf-8')
         response = method(url)
-        redis_instance.set(f'count:{url}', 0)
         redis_instance.setex(f'result:{url}', 10, response.text)
         return response.text
     return wrapper
